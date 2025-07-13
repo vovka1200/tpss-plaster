@@ -19,7 +19,7 @@ for f in $(find patches -type f | sort); do
   if [ "$n" -gt "$TAG" ]; then
     if [[ "$f" == *".sql" ]]; then
       echo "Выполняется psql: $f"
-      psql -1 -v ON_ERROR_STOP=1 < "$f" || exit 1
+      PGDATABASE="tpss" psql -1 -v ON_ERROR_STOP=1 < "$f" || exit 1
     else
       echo "Выполняется bash: $f"
       bash "$f"
