@@ -1,0 +1,2 @@
+COMMENT ON DATABASE tpss
+    IS 'v25.07.13.13:01';
