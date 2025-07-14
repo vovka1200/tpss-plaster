@@ -110,21 +110,21 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE OR REPLACE FUNCTION access.add_group(
     a_name text)
-    RETURNS uuid
+    RETURNS access.groups
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
 AS
 $BODY$
 DECLARE
-    v_id uuid;
+    v_group access.groups;
 BEGIN
 
     INSERT INTO access.groups (name)
     VALUES (a_name)
-    RETURNING id INTO v_id;
+    RETURNING * INTO v_group;
 
-    RETURN v_id;
+    RETURN v_group;
 
 END
 $BODY$;
@@ -142,14 +142,14 @@ CREATE OR REPLACE FUNCTION access.add_user(
     a_name text,
     a_group uuid
 )
-    RETURNS uuid
+    RETURNS access.users
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
 AS
 $BODY$
 DECLARE
-    v_id uuid DEFAULT NULL;
+    v_user access.users DEFAULT NULL;
 BEGIN
 
     INSERT INTO access.users (username,
@@ -158,15 +158,15 @@ BEGIN
     VALUES (a_username,
             crypt(a_password, gen_salt('bf')),
             a_name)
-    RETURNING id INTO v_id;
+    RETURNING * INTO v_user;
 
     INSERT INTO access.members (group_id, user_id)
-    SELECT id, v_id
+    SELECT id, v_user.id
     FROM access.groups
     WHERE name = 'Администраторы'
     ON CONFLICT DO NOTHING;
 
-    RETURN v_id;
+    RETURN v_user;
 
 END;
 $BODY$;
@@ -179,7 +179,7 @@ COMMENT ON FUNCTION access.add_user(text, text, text, uuid)
 
 SELECT access.add_user(
                'test', '123', 'Тестовый Тест Тестович',
-               access.add_group('Администраторы')
+               (SELECT id FROM access.add_group('Администраторы'))
        );
 
 -- Table: access.objects
@@ -255,3 +255,61 @@ CREATE UNIQUE INDEX IF NOT EXISTS rules_uni_idx
         (group_id ASC NULLS LAST, object_id ASC NULLS LAST)
     WITH (deduplicate_items=True)
     TABLESPACE pg_default;
+
+-- FUNCTION: access.add_object(text)
+
+-- DROP FUNCTION IF EXISTS access.add_object(text);
+
+CREATE OR REPLACE FUNCTION access.add_object(
+    a_name text)
+    RETURNS access.objects
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS
+$BODY$
+DECLARE
+    v_object access.objects;
+BEGIN
+
+    INSERT INTO access.objects (name)
+    VALUES (a_name)
+    RETURNING * INTO v_object;
+
+    RETURN v_object;
+
+END
+$BODY$;
+
+ALTER FUNCTION access.add_object(text)
+    OWNER TO postgres;
+
+-- FUNCTION: access.add_rule(uuid, uuid, access.access_type[])
+
+-- DROP FUNCTION IF EXISTS access.add_rule(uuid, uuid, access.access_type[]);
+
+CREATE OR REPLACE FUNCTION access.add_rule(
+    a_group uuid,
+    a_object uuid,
+    a_access access.access_type[])
+    RETURNS access.rules
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS
+$BODY$
+DECLARE
+    v_rules access.rules;
+BEGIN
+
+    INSERT INTO access.rules (group_id, object_id, access)
+    VALUES (a_group, a_object, a_access)
+    RETURNING * INTO v_rules;
+
+    RETURN v_rules;
+
+END
+$BODY$;
+
+ALTER FUNCTION access.add_rule(uuid, uuid, access.access_type[])
+    OWNER TO postgres;
