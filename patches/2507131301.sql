@@ -182,3 +182,76 @@ SELECT access.add_user(
                access.add_group('Администраторы')
        );
 
+-- Table: access.objects
+
+-- DROP TABLE IF EXISTS access.objects;
+
+CREATE TABLE IF NOT EXISTS access.objects
+(
+    id   uuid NOT NULL DEFAULT uuid_generate_v4(),
+    name text COLLATE pg_catalog."default",
+    CONSTRAINT objects_pkey PRIMARY KEY (id)
+)
+    TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS access.objects
+    OWNER to postgres;
+
+-- Type: access_type
+
+-- DROP TYPE IF EXISTS access.access_type;
+
+CREATE TYPE access.access_type AS ENUM
+    ('read', 'write');
+
+ALTER TYPE access.access_type
+    OWNER TO postgres;
+
+-- Table: access.rules
+
+-- DROP TABLE IF EXISTS access.rules;
+
+CREATE TABLE IF NOT EXISTS access.rules
+(
+    object_id uuid                 NOT NULL,
+    group_id  uuid                 NOT NULL,
+    access    access.access_type[] NOT NULL,
+    CONSTRAINT rules_group_fkey FOREIGN KEY (group_id)
+        REFERENCES access.groups (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT rules_object_fkey FOREIGN KEY (object_id)
+        REFERENCES access.objects (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT rules_access_check CHECK (array_length(access, 1) <= 2)
+)
+    TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS access.rules
+    OWNER to postgres;
+-- Index: fki_rules_group_fkey
+
+-- DROP INDEX IF EXISTS access.fki_rules_group_fkey;
+
+CREATE INDEX IF NOT EXISTS fki_rules_group_fkey
+    ON access.rules USING btree
+        (group_id ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: fki_rules_object_fkey
+
+-- DROP INDEX IF EXISTS access.fki_rules_object_fkey;
+
+CREATE INDEX IF NOT EXISTS fki_rules_object_fkey
+    ON access.rules USING btree
+        (object_id ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: rules_uni_idx
+
+-- DROP INDEX IF EXISTS access.rules_uni_idx;
+
+CREATE UNIQUE INDEX IF NOT EXISTS rules_uni_idx
+    ON access.rules USING btree
+        (group_id ASC NULLS LAST, object_id ASC NULLS LAST)
+    WITH (deduplicate_items=True)
+    TABLESPACE pg_default;
