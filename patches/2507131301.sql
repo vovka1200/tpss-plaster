@@ -161,9 +161,7 @@ BEGIN
     RETURNING * INTO v_user;
 
     INSERT INTO access.members (group_id, user_id)
-    SELECT id, v_user.id
-    FROM access.groups
-    WHERE name = 'Администраторы'
+    VALUES (a_group, v_user.id)
     ON CONFLICT DO NOTHING;
 
     RETURN v_user;
@@ -327,3 +325,82 @@ GRANT USAGE ON SCHEMA crm TO tpss;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA crm
     GRANT INSERT, SELECT, UPDATE ON TABLES TO tpss;
+
+-- FUNCTION: crm.is_phone(text)
+
+-- DROP FUNCTION IF EXISTS crm.is_phone(text);
+
+CREATE OR REPLACE FUNCTION crm.is_phone(
+    a_number text)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS
+$BODY$
+BEGIN
+    -- 8 (800) 000-00-00
+    RETURN a_number ~ '^\d \(\d{3}\) \d{3}-\d{2}-\d{2}$';
+
+END
+$BODY$;
+
+ALTER FUNCTION crm.is_phone(text)
+    OWNER TO postgres;
+
+
+-- Table: crm.clients
+
+-- DROP TABLE IF EXISTS crm.clients;
+
+CREATE TABLE IF NOT EXISTS crm.clients
+(
+    id      uuid                     NOT NULL DEFAULT uuid_generate_v4(),
+    created timestamp with time zone NOT NULL DEFAULT now(),
+    name    text COLLATE pg_catalog."default",
+    CONSTRAINT clients_pkey PRIMARY KEY (id)
+)
+    TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS crm.clients
+    OWNER to postgres;
+
+REVOKE ALL ON TABLE crm.clients FROM tpss;
+
+GRANT ALL ON TABLE crm.clients TO postgres;
+
+GRANT INSERT, SELECT, UPDATE ON TABLE crm.clients TO tpss;
+
+-- Table: crm.phones
+
+-- DROP TABLE IF EXISTS crm.phones;
+
+CREATE TABLE IF NOT EXISTS crm.phones
+(
+    client_id uuid                              NOT NULL,
+    "number"  text COLLATE pg_catalog."default" NOT NULL,
+    note      text COLLATE pg_catalog."default",
+    CONSTRAINT phones_client_fkey FOREIGN KEY (client_id)
+        REFERENCES crm.clients (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT phones_number_check CHECK (crm.is_phone(number))
+)
+    TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS crm.phones
+    OWNER to postgres;
+
+REVOKE ALL ON TABLE crm.phones FROM tpss;
+
+GRANT ALL ON TABLE crm.phones TO postgres;
+
+GRANT INSERT, SELECT, UPDATE ON TABLE crm.phones TO tpss;
+-- Index: fki_phones_client_fkey
+
+-- DROP INDEX IF EXISTS crm.fki_phones_client_fkey;
+
+CREATE INDEX IF NOT EXISTS fki_phones_client_fkey
+    ON crm.phones USING btree
+        (client_id ASC NULLS LAST)
+    TABLESPACE pg_default;
