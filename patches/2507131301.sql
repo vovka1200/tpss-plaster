@@ -313,3 +313,17 @@ $BODY$;
 
 ALTER FUNCTION access.add_rule(uuid, uuid, access.access_type[])
     OWNER TO postgres;
+
+-- SCHEMA: crm
+
+-- DROP SCHEMA IF EXISTS crm ;
+
+CREATE SCHEMA IF NOT EXISTS crm
+    AUTHORIZATION postgres;
+
+GRANT ALL ON SCHEMA crm TO postgres;
+
+GRANT USAGE ON SCHEMA crm TO tpss;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA crm
+    GRANT INSERT, SELECT, UPDATE ON TABLES TO tpss;
