@@ -404,3 +404,30 @@ CREATE INDEX IF NOT EXISTS fki_phones_client_fkey
     ON crm.phones USING btree
         (client_id ASC NULLS LAST)
     TABLESPACE pg_default;
+
+-- FUNCTION: crm.add_client(text)
+
+-- DROP FUNCTION IF EXISTS crm.add_client(text);
+
+CREATE OR REPLACE FUNCTION crm.add_client(
+    a_name text)
+    RETURNS crm.clients
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS
+$BODY$
+DECLARE
+    v_client crm.clients;
+BEGIN
+
+    INSERT INTO crm.clients(name)
+    VALUES (a_name)
+    RETURNING * INTO v_client;
+
+    RETURN v_client;
+END
+$BODY$;
+
+ALTER FUNCTION crm.add_client(text)
+    OWNER TO postgres;
