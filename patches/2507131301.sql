@@ -377,6 +377,7 @@ GRANT INSERT, SELECT, UPDATE ON TABLE crm.clients TO tpss;
 
 CREATE TABLE IF NOT EXISTS crm.phones
 (
+    created   timestamp with time zone          NOT NULL DEFAULT now(),
     client_id uuid                              NOT NULL,
     "number"  text COLLATE pg_catalog."default" NOT NULL,
     note      text COLLATE pg_catalog."default",
@@ -431,3 +432,5 @@ $BODY$;
 
 ALTER FUNCTION crm.add_client(text)
     OWNER TO postgres;
+
+SELECT crm.add_client('Test Клиент');
