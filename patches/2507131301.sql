@@ -186,13 +186,12 @@ SELECT access.add_user(
 
 CREATE TABLE IF NOT EXISTS access.objects
 (
-    id uuid NOT NULL DEFAULT uuid_generate_v4(),
-    created timestamp with time zone NOT NULL DEFAULT now(),
-    name text COLLATE pg_catalog."default",
+    id          uuid                     NOT NULL DEFAULT uuid_generate_v4(),
+    created     timestamp with time zone NOT NULL DEFAULT now(),
+    name        text COLLATE pg_catalog."default",
     description text COLLATE pg_catalog."default",
     CONSTRAINT objects_pkey PRIMARY KEY (id)
 )
-
     TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS access.objects
@@ -437,3 +436,12 @@ ALTER FUNCTION crm.add_client(text)
     OWNER TO postgres;
 
 SELECT crm.add_client('Test Клиент');
+
+SELECT access.add_rule(
+               (SELECT id FROM access.groups WHERE name = 'Администраторы' LIMIT 1),
+               (SELECT id
+                FROM access.add_object(
+                        'settings'
+                     )),
+               '{read,write}'::access.access_type[]
+       );
