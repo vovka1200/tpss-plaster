@@ -186,16 +186,23 @@ SELECT access.add_user(
 
 CREATE TABLE IF NOT EXISTS access.objects
 (
-    id          uuid                     NOT NULL DEFAULT uuid_generate_v4(),
-    created     timestamp with time zone NOT NULL DEFAULT now(),
-    name        text COLLATE pg_catalog."default",
+    id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    created timestamp with time zone NOT NULL DEFAULT now(),
+    name text COLLATE pg_catalog."default",
     description text COLLATE pg_catalog."default",
     CONSTRAINT objects_pkey PRIMARY KEY (id)
 )
+
     TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS access.objects
     OWNER to postgres;
+
+REVOKE ALL ON TABLE access.objects FROM tpss;
+
+GRANT ALL ON TABLE access.objects TO postgres;
+
+GRANT INSERT, SELECT, UPDATE ON TABLE access.objects TO tpss;
 
 -- Type: access_type
 
@@ -213,9 +220,9 @@ ALTER TYPE access.access_type
 
 CREATE TABLE IF NOT EXISTS access.rules
 (
-    object_id uuid                 NOT NULL,
-    group_id  uuid                 NOT NULL,
-    access    access.access_type[] NOT NULL,
+    object_id uuid NOT NULL,
+    group_id uuid NOT NULL,
+    access access.access_type[] NOT NULL,
     CONSTRAINT rules_group_fkey FOREIGN KEY (group_id)
         REFERENCES access.groups (id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -226,10 +233,17 @@ CREATE TABLE IF NOT EXISTS access.rules
         ON DELETE NO ACTION,
     CONSTRAINT rules_access_check CHECK (array_length(access, 1) <= 2)
 )
+
     TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS access.rules
     OWNER to postgres;
+
+REVOKE ALL ON TABLE access.rules FROM tpss;
+
+GRANT ALL ON TABLE access.rules TO postgres;
+
+GRANT INSERT, SELECT, UPDATE ON TABLE access.rules TO tpss;
 -- Index: fki_rules_group_fkey
 
 -- DROP INDEX IF EXISTS access.fki_rules_group_fkey;
