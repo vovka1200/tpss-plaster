@@ -186,10 +186,13 @@ SELECT access.add_user(
 
 CREATE TABLE IF NOT EXISTS access.objects
 (
-    id   uuid NOT NULL DEFAULT uuid_generate_v4(),
+    id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    created timestamp with time zone NOT NULL DEFAULT now(),
     name text COLLATE pg_catalog."default",
+    description text COLLATE pg_catalog."default",
     CONSTRAINT objects_pkey PRIMARY KEY (id)
 )
+
     TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS access.objects
