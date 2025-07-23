@@ -186,13 +186,12 @@ SELECT access.add_user(
 
 CREATE TABLE IF NOT EXISTS access.objects
 (
-    id uuid NOT NULL DEFAULT uuid_generate_v4(),
-    created timestamp with time zone NOT NULL DEFAULT now(),
-    name text COLLATE pg_catalog."default",
+    id          uuid                     NOT NULL DEFAULT uuid_generate_v4(),
+    created     timestamp with time zone NOT NULL DEFAULT now(),
+    name        text COLLATE pg_catalog."default",
     description text COLLATE pg_catalog."default",
     CONSTRAINT objects_pkey PRIMARY KEY (id)
 )
-
     TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS access.objects
@@ -220,9 +219,9 @@ ALTER TYPE access.access_type
 
 CREATE TABLE IF NOT EXISTS access.rules
 (
-    object_id uuid NOT NULL,
-    group_id uuid NOT NULL,
-    access access.access_type[] NOT NULL,
+    object_id uuid                 NOT NULL,
+    group_id  uuid                 NOT NULL,
+    access    access.access_type[] NOT NULL,
     CONSTRAINT rules_group_fkey FOREIGN KEY (group_id)
         REFERENCES access.groups (id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -233,7 +232,6 @@ CREATE TABLE IF NOT EXISTS access.rules
         ON DELETE NO ACTION,
     CONSTRAINT rules_access_check CHECK (array_length(access, 1) <= 2)
 )
-
     TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS access.rules
@@ -459,3 +457,48 @@ SELECT access.add_rule(
                      )),
                '{read,write}'::access.access_type[]
        );
+
+-- Table: access.sessions
+
+-- DROP TABLE IF EXISTS access.sessions;
+
+CREATE TABLE IF NOT EXISTS access.sessions
+(
+    id       uuid                              NOT NULL DEFAULT uuid_generate_v4(),
+    created  timestamp with time zone          NOT NULL DEFAULT now(),
+    archived boolean                           NOT NULL DEFAULT false,
+    "user"   uuid                              NOT NULL,
+    token    text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT sessions_pkey PRIMARY KEY (id),
+    CONSTRAINT sessions_user_fkey FOREIGN KEY ("user")
+        REFERENCES access.users (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+    TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS access.sessions
+    OWNER to postgres;
+
+REVOKE ALL ON TABLE access.sessions FROM tpss;
+
+GRANT ALL ON TABLE access.sessions TO postgres;
+
+GRANT INSERT, SELECT, UPDATE ON TABLE access.sessions TO tpss;
+-- Index: fki_sessions_user_fkey
+
+-- DROP INDEX IF EXISTS access.fki_sessions_user_fkey;
+
+CREATE INDEX IF NOT EXISTS fki_sessions_user_fkey
+    ON access.sessions USING btree
+        ("user" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: sessions_token_idx
+
+-- DROP INDEX IF EXISTS access.sessions_token_idx;
+
+CREATE UNIQUE INDEX IF NOT EXISTS sessions_token_idx
+    ON access.sessions USING btree
+        (token COLLATE pg_catalog."default" ASC NULLS LAST)
+    WITH (deduplicate_items=True)
+    TABLESPACE pg_default;
