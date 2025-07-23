@@ -467,10 +467,10 @@ CREATE TABLE IF NOT EXISTS access.sessions
     id       uuid                              NOT NULL DEFAULT uuid_generate_v4(),
     created  timestamp with time zone          NOT NULL DEFAULT now(),
     archived boolean                           NOT NULL DEFAULT false,
-    "user"   uuid                              NOT NULL,
+    user_id  uuid                              NOT NULL,
     token    text COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT sessions_pkey PRIMARY KEY (id),
-    CONSTRAINT sessions_user_fkey FOREIGN KEY ("user")
+    CONSTRAINT sessions_user_fkey FOREIGN KEY (user_id)
         REFERENCES access.users (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
@@ -491,7 +491,7 @@ GRANT INSERT, SELECT, UPDATE ON TABLE access.sessions TO tpss;
 
 CREATE INDEX IF NOT EXISTS fki_sessions_user_fkey
     ON access.sessions USING btree
-        ("user" ASC NULLS LAST)
+        (user_id ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: sessions_token_idx
 
