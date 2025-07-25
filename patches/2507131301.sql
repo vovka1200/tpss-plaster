@@ -1,121 +1,111 @@
-COMMENT ON DATABASE tpss
-    IS 'v25.07.13.13:01';
+--
+-- PostgreSQL database dump
+--
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Dumped from database version 17.5
+-- Dumped by pg_dump version 17.5
 
-CREATE SCHEMA access
-    AUTHORIZATION postgres;
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
 
-GRANT USAGE ON SCHEMA access TO tpss;
+--
+-- Name: access; Type: SCHEMA; Schema: -; Owner: postgres
+--
 
--- Table: access.users
+CREATE SCHEMA access;
 
--- DROP TABLE IF EXISTS access.users;
 
-CREATE TABLE IF NOT EXISTS access.users
-(
-    id       uuid                     NOT NULL DEFAULT uuid_generate_v4(),
-    created  timestamp with time zone NOT NULL DEFAULT now(),
-    username text COLLATE pg_catalog."default",
-    password text COLLATE pg_catalog."default",
-    name     text COLLATE pg_catalog."default",
-    CONSTRAINT users_pkey PRIMARY KEY (id),
-    CONSTRAINT users_username_uni UNIQUE (username)
-)
-    TABLESPACE pg_default;
+ALTER SCHEMA access OWNER TO postgres;
 
-ALTER TABLE IF EXISTS access.users
-    OWNER to postgres;
+--
+-- Name: crm; Type: SCHEMA; Schema: -; Owner: postgres
+--
 
-COMMENT ON TABLE access.users
-    IS 'Пользователи';
+CREATE SCHEMA crm;
 
-GRANT INSERT, SELECT, UPDATE ON TABLE access.users TO tpss;
 
--- Table: access.groups
+ALTER SCHEMA crm OWNER TO postgres;
 
--- DROP TABLE IF EXISTS access.groups;
+--
+-- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
+--
 
-CREATE TABLE IF NOT EXISTS access.groups
-(
-    id      uuid                     NOT NULL DEFAULT uuid_generate_v4(),
-    created timestamp with time zone NOT NULL DEFAULT now(),
-    name    text COLLATE pg_catalog."default",
-    CONSTRAINT groups_pkey PRIMARY KEY (id),
-    CONSTRAINT groups_name_uni UNIQUE (name)
-)
-    TABLESPACE pg_default;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
-ALTER TABLE IF EXISTS access.groups
-    OWNER to postgres;
 
-COMMENT ON TABLE access.groups
-    IS 'Группы';
+--
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
+--
 
-GRANT INSERT, SELECT, UPDATE ON TABLE access.groups TO tpss;
+COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
--- Table: access.members
 
--- DROP TABLE IF EXISTS access.members;
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
 
-CREATE TABLE IF NOT EXISTS access.members
-(
-    group_id uuid NOT NULL,
-    user_id  uuid NOT NULL,
-    CONSTRAINT members_group_member_uni UNIQUE (group_id, user_id),
-    CONSTRAINT members_group_fkey FOREIGN KEY (group_id)
-        REFERENCES access.groups (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
-    CONSTRAINT members_user_fkey FOREIGN KEY (user_id)
-        REFERENCES access.users (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-)
-    TABLESPACE pg_default;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
-ALTER TABLE IF EXISTS access.members
-    OWNER to postgres;
 
-COMMENT ON TABLE access.members
-    IS 'Участники групп';
--- Index: fki_members_group_fkey
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
 
--- DROP INDEX IF EXISTS access.fki_members_group_fkey;
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
-CREATE INDEX IF NOT EXISTS fki_members_group_fkey
-    ON access.members USING btree
-        (group_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: fki_members_user_fkey
 
--- DROP INDEX IF EXISTS access.fki_members_user_fkey;
+--
+-- Name: access_type; Type: TYPE; Schema: access; Owner: postgres
+--
 
-CREATE INDEX IF NOT EXISTS fki_members_user_fkey
-    ON access.members USING btree
-        (user_id ASC NULLS LAST)
-    TABLESPACE pg_default;
+CREATE TYPE access.access_type AS ENUM (
+    'read',
+    'write'
+);
 
-GRANT INSERT, SELECT, UPDATE ON TABLE access.members TO tpss;
 
--- Extension: pgcrypto
+ALTER TYPE access.access_type OWNER TO postgres;
 
--- DROP EXTENSION pgcrypto;
+SET default_tablespace = '';
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+SET default_table_access_method = heap;
 
--- FUNCTION: access.add_group(text)
+--
+-- Name: groups; Type: TABLE; Schema: access; Owner: postgres
+--
 
--- DROP FUNCTION IF EXISTS access.add_group(text);
+CREATE TABLE access.groups (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text
+);
 
-CREATE OR REPLACE FUNCTION access.add_group(
-    a_name text)
-    RETURNS access.groups
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS
-$BODY$
+
+ALTER TABLE access.groups OWNER TO postgres;
+
+--
+-- Name: TABLE groups; Type: COMMENT; Schema: access; Owner: postgres
+--
+
+COMMENT ON TABLE access.groups IS 'Группы';
+
+
+--
+-- Name: add_group(text); Type: FUNCTION; Schema: access; Owner: postgres
+--
+
+CREATE FUNCTION access.add_group(a_name text) RETURNS access.groups
+    LANGUAGE plpgsql
+    AS $$
 DECLARE
     v_group access.groups;
 BEGIN
@@ -127,27 +117,156 @@ BEGIN
     RETURN v_group;
 
 END
-$BODY$;
+$$;
 
-ALTER FUNCTION access.add_group(text)
-    OWNER TO postgres;
 
--- FUNCTION: access.add_user(text, text, text)
+ALTER FUNCTION access.add_group(a_name text) OWNER TO postgres;
 
--- DROP FUNCTION IF EXISTS access.add_user(text, text, text, uuid);
+--
+-- Name: objects; Type: TABLE; Schema: access; Owner: postgres
+--
 
-CREATE OR REPLACE FUNCTION access.add_user(
-    a_username text,
-    a_password text,
-    a_name text,
-    a_group uuid
+CREATE TABLE access.objects (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text,
+    description text
+);
+
+
+ALTER TABLE access.objects OWNER TO postgres;
+
+--
+-- Name: add_object(text); Type: FUNCTION; Schema: access; Owner: postgres
+--
+
+CREATE FUNCTION access.add_object(a_name text) RETURNS access.objects
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_object access.objects;
+BEGIN
+
+    INSERT INTO access.objects (name)
+    VALUES (a_name)
+    RETURNING * INTO v_object;
+
+    RETURN v_object;
+
+END
+$$;
+
+
+ALTER FUNCTION access.add_object(a_name text) OWNER TO postgres;
+
+--
+-- Name: rules; Type: TABLE; Schema: access; Owner: postgres
+--
+
+CREATE TABLE access.rules (
+    object_id uuid NOT NULL,
+    group_id uuid NOT NULL,
+    access access.access_type[] NOT NULL,
+    CONSTRAINT rules_access_check CHECK ((array_length(access, 1) <= 2))
+);
+
+
+ALTER TABLE access.rules OWNER TO postgres;
+
+--
+-- Name: add_rule(uuid, uuid, access.access_type[]); Type: FUNCTION; Schema: access; Owner: postgres
+--
+
+CREATE FUNCTION access.add_rule(a_group uuid, a_object uuid, a_access access.access_type[]) RETURNS access.rules
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_rules access.rules;
+BEGIN
+
+    INSERT INTO access.rules (group_id, object_id, access)
+    VALUES (a_group, a_object, a_access)
+    RETURNING * INTO v_rules;
+
+    RETURN v_rules;
+
+END
+$$;
+
+
+ALTER FUNCTION access.add_rule(a_group uuid, a_object uuid, a_access access.access_type[]) OWNER TO postgres;
+
+--
+-- Name: sessions; Type: TABLE; Schema: access; Owner: postgres
+--
+
+CREATE TABLE access.sessions (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    archived boolean DEFAULT false NOT NULL,
+    user_id uuid NOT NULL,
+    token text NOT NULL
+);
+
+
+ALTER TABLE access.sessions OWNER TO postgres;
+
+--
+-- Name: add_session(uuid); Type: FUNCTION; Schema: access; Owner: postgres
+--
+
+CREATE FUNCTION access.add_session(a_user uuid) RETURNS access.sessions
+    LANGUAGE plpgsql
+    AS $$DECLARE v_session access.sessions;
+BEGIN
+
+UPDATE access.sessions
+SET archived=true
+WHERE user_id=a_user;
+
+INSERT INTO access.sessions (
+	user_id, token
+) VALUES (
+	a_user, gen_random_uuid()::text
 )
-    RETURNS access.users
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS
-$BODY$
+RETURNING * INTO v_session;
+
+RETURN v_session;
+
+END$$;
+
+
+ALTER FUNCTION access.add_session(a_user uuid) OWNER TO postgres;
+
+--
+-- Name: users; Type: TABLE; Schema: access; Owner: postgres
+--
+
+CREATE TABLE access.users (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    username text,
+    password text,
+    name text
+);
+
+
+ALTER TABLE access.users OWNER TO postgres;
+
+--
+-- Name: TABLE users; Type: COMMENT; Schema: access; Owner: postgres
+--
+
+COMMENT ON TABLE access.users IS 'Пользователи';
+
+
+--
+-- Name: add_user(text, text, text, uuid); Type: FUNCTION; Schema: access; Owner: postgres
+--
+
+CREATE FUNCTION access.add_user(a_username text, a_password text, a_name text, a_group uuid) RETURNS access.users
+    LANGUAGE plpgsql
+    AS $$
 DECLARE
     v_user access.users DEFAULT NULL;
 BEGIN
@@ -167,271 +286,38 @@ BEGIN
     RETURN v_user;
 
 END;
-$BODY$;
+$$;
 
-ALTER FUNCTION access.add_user(text, text, text, uuid)
-    OWNER TO postgres;
 
-COMMENT ON FUNCTION access.add_user(text, text, text, uuid)
-    IS 'Добавляет пользователя';
+ALTER FUNCTION access.add_user(a_username text, a_password text, a_name text, a_group uuid) OWNER TO postgres;
 
-SELECT access.add_user(
-               'test', '123', 'Тестовый Тест Тестович',
-               (SELECT id FROM access.add_group('Администраторы'))
-       );
+--
+-- Name: FUNCTION add_user(a_username text, a_password text, a_name text, a_group uuid); Type: COMMENT; Schema: access; Owner: postgres
+--
 
--- Table: access.objects
+COMMENT ON FUNCTION access.add_user(a_username text, a_password text, a_name text, a_group uuid) IS 'Добавляет пользователя';
 
--- DROP TABLE IF EXISTS access.objects;
 
-CREATE TABLE IF NOT EXISTS access.objects
-(
-    id          uuid                     NOT NULL DEFAULT uuid_generate_v4(),
-    created     timestamp with time zone NOT NULL DEFAULT now(),
-    name        text COLLATE pg_catalog."default",
-    description text COLLATE pg_catalog."default",
-    CONSTRAINT objects_pkey PRIMARY KEY (id)
-)
-    TABLESPACE pg_default;
+--
+-- Name: clients; Type: TABLE; Schema: crm; Owner: postgres
+--
 
-ALTER TABLE IF EXISTS access.objects
-    OWNER to postgres;
+CREATE TABLE crm.clients (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text
+);
 
-REVOKE ALL ON TABLE access.objects FROM tpss;
 
-GRANT ALL ON TABLE access.objects TO postgres;
+ALTER TABLE crm.clients OWNER TO postgres;
 
-GRANT INSERT, SELECT, UPDATE ON TABLE access.objects TO tpss;
+--
+-- Name: add_client(text); Type: FUNCTION; Schema: crm; Owner: postgres
+--
 
--- Type: access_type
-
--- DROP TYPE IF EXISTS access.access_type;
-
-CREATE TYPE access.access_type AS ENUM
-    ('read', 'write');
-
-ALTER TYPE access.access_type
-    OWNER TO postgres;
-
--- Table: access.rules
-
--- DROP TABLE IF EXISTS access.rules;
-
-CREATE TABLE IF NOT EXISTS access.rules
-(
-    object_id uuid                 NOT NULL,
-    group_id  uuid                 NOT NULL,
-    access    access.access_type[] NOT NULL,
-    CONSTRAINT rules_group_fkey FOREIGN KEY (group_id)
-        REFERENCES access.groups (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
-    CONSTRAINT rules_object_fkey FOREIGN KEY (object_id)
-        REFERENCES access.objects (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
-    CONSTRAINT rules_access_check CHECK (array_length(access, 1) <= 2)
-)
-    TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS access.rules
-    OWNER to postgres;
-
-REVOKE ALL ON TABLE access.rules FROM tpss;
-
-GRANT ALL ON TABLE access.rules TO postgres;
-
-GRANT INSERT, SELECT, UPDATE ON TABLE access.rules TO tpss;
--- Index: fki_rules_group_fkey
-
--- DROP INDEX IF EXISTS access.fki_rules_group_fkey;
-
-CREATE INDEX IF NOT EXISTS fki_rules_group_fkey
-    ON access.rules USING btree
-        (group_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: fki_rules_object_fkey
-
--- DROP INDEX IF EXISTS access.fki_rules_object_fkey;
-
-CREATE INDEX IF NOT EXISTS fki_rules_object_fkey
-    ON access.rules USING btree
-        (object_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: rules_uni_idx
-
--- DROP INDEX IF EXISTS access.rules_uni_idx;
-
-CREATE UNIQUE INDEX IF NOT EXISTS rules_uni_idx
-    ON access.rules USING btree
-        (group_id ASC NULLS LAST, object_id ASC NULLS LAST)
-    WITH (deduplicate_items=True)
-    TABLESPACE pg_default;
-
--- FUNCTION: access.add_object(text)
-
--- DROP FUNCTION IF EXISTS access.add_object(text);
-
-CREATE OR REPLACE FUNCTION access.add_object(
-    a_name text)
-    RETURNS access.objects
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS
-$BODY$
-DECLARE
-    v_object access.objects;
-BEGIN
-
-    INSERT INTO access.objects (name)
-    VALUES (a_name)
-    RETURNING * INTO v_object;
-
-    RETURN v_object;
-
-END
-$BODY$;
-
-ALTER FUNCTION access.add_object(text)
-    OWNER TO postgres;
-
--- FUNCTION: access.add_rule(uuid, uuid, access.access_type[])
-
--- DROP FUNCTION IF EXISTS access.add_rule(uuid, uuid, access.access_type[]);
-
-CREATE OR REPLACE FUNCTION access.add_rule(
-    a_group uuid,
-    a_object uuid,
-    a_access access.access_type[])
-    RETURNS access.rules
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS
-$BODY$
-DECLARE
-    v_rules access.rules;
-BEGIN
-
-    INSERT INTO access.rules (group_id, object_id, access)
-    VALUES (a_group, a_object, a_access)
-    RETURNING * INTO v_rules;
-
-    RETURN v_rules;
-
-END
-$BODY$;
-
-ALTER FUNCTION access.add_rule(uuid, uuid, access.access_type[])
-    OWNER TO postgres;
-
--- SCHEMA: crm
-
--- DROP SCHEMA IF EXISTS crm ;
-
-CREATE SCHEMA IF NOT EXISTS crm
-    AUTHORIZATION postgres;
-
-GRANT ALL ON SCHEMA crm TO postgres;
-
-GRANT USAGE ON SCHEMA crm TO tpss;
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA crm
-    GRANT INSERT, SELECT, UPDATE ON TABLES TO tpss;
-
--- FUNCTION: crm.is_phone(text)
-
--- DROP FUNCTION IF EXISTS crm.is_phone(text);
-
-CREATE OR REPLACE FUNCTION crm.is_phone(
-    a_number text)
-    RETURNS boolean
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS
-$BODY$
-BEGIN
-    -- 8 (800) 000-00-00
-    RETURN a_number ~ '^\d \(\d{3}\) \d{3}-\d{2}-\d{2}$';
-
-END
-$BODY$;
-
-ALTER FUNCTION crm.is_phone(text)
-    OWNER TO postgres;
-
-
--- Table: crm.clients
-
--- DROP TABLE IF EXISTS crm.clients;
-
-CREATE TABLE IF NOT EXISTS crm.clients
-(
-    id      uuid                     NOT NULL DEFAULT uuid_generate_v4(),
-    created timestamp with time zone NOT NULL DEFAULT now(),
-    name    text COLLATE pg_catalog."default",
-    CONSTRAINT clients_pkey PRIMARY KEY (id)
-)
-    TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS crm.clients
-    OWNER to postgres;
-
-REVOKE ALL ON TABLE crm.clients FROM tpss;
-
-GRANT ALL ON TABLE crm.clients TO postgres;
-
-GRANT INSERT, SELECT, UPDATE ON TABLE crm.clients TO tpss;
-
--- Table: crm.phones
-
--- DROP TABLE IF EXISTS crm.phones;
-
-CREATE TABLE IF NOT EXISTS crm.phones
-(
-    created   timestamp with time zone          NOT NULL DEFAULT now(),
-    client_id uuid                              NOT NULL,
-    "number"  text COLLATE pg_catalog."default" NOT NULL,
-    note      text COLLATE pg_catalog."default",
-    CONSTRAINT phones_client_fkey FOREIGN KEY (client_id)
-        REFERENCES crm.clients (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
-    CONSTRAINT phones_number_check CHECK (crm.is_phone(number))
-)
-    TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS crm.phones
-    OWNER to postgres;
-
-REVOKE ALL ON TABLE crm.phones FROM tpss;
-
-GRANT ALL ON TABLE crm.phones TO postgres;
-
-GRANT INSERT, SELECT, UPDATE ON TABLE crm.phones TO tpss;
--- Index: fki_phones_client_fkey
-
--- DROP INDEX IF EXISTS crm.fki_phones_client_fkey;
-
-CREATE INDEX IF NOT EXISTS fki_phones_client_fkey
-    ON crm.phones USING btree
-        (client_id ASC NULLS LAST)
-    TABLESPACE pg_default;
-
--- FUNCTION: crm.add_client(text)
-
--- DROP FUNCTION IF EXISTS crm.add_client(text);
-
-CREATE OR REPLACE FUNCTION crm.add_client(
-    a_name text)
-    RETURNS crm.clients
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS
-$BODY$
+CREATE FUNCTION crm.add_client(a_name text) RETURNS crm.clients
+    LANGUAGE plpgsql
+    AS $$
 DECLARE
     v_client crm.clients;
 BEGIN
@@ -442,63 +328,378 @@ BEGIN
 
     RETURN v_client;
 END
-$BODY$;
+$$;
 
-ALTER FUNCTION crm.add_client(text)
-    OWNER TO postgres;
 
-SELECT crm.add_client('Test Клиент');
+ALTER FUNCTION crm.add_client(a_name text) OWNER TO postgres;
 
-SELECT access.add_rule(
-               (SELECT id FROM access.groups WHERE name = 'Администраторы' LIMIT 1),
-               (SELECT id
-                FROM access.add_object(
-                        'settings'
-                     )),
-               '{read,write}'::access.access_type[]
-       );
+--
+-- Name: is_phone(text); Type: FUNCTION; Schema: crm; Owner: postgres
+--
 
--- Table: access.sessions
+CREATE FUNCTION crm.is_phone(a_number text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $_$
+BEGIN
+    -- 8 (800) 000-00-00
+    RETURN a_number ~ '^\d \(\d{3}\) \d{3}-\d{2}-\d{2}$';
 
--- DROP TABLE IF EXISTS access.sessions;
+END
+$_$;
 
-CREATE TABLE IF NOT EXISTS access.sessions
-(
-    id       uuid                              NOT NULL DEFAULT uuid_generate_v4(),
-    created  timestamp with time zone          NOT NULL DEFAULT now(),
-    archived boolean                           NOT NULL DEFAULT false,
-    user_id  uuid                              NOT NULL,
-    token    text COLLATE pg_catalog."default" NOT NULL,
-    CONSTRAINT sessions_pkey PRIMARY KEY (id),
-    CONSTRAINT sessions_user_fkey FOREIGN KEY (user_id)
-        REFERENCES access.users (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-)
-    TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS access.sessions
-    OWNER to postgres;
+ALTER FUNCTION crm.is_phone(a_number text) OWNER TO postgres;
 
-REVOKE ALL ON TABLE access.sessions FROM tpss;
+--
+-- Name: members; Type: TABLE; Schema: access; Owner: postgres
+--
 
-GRANT ALL ON TABLE access.sessions TO postgres;
+CREATE TABLE access.members (
+    group_id uuid NOT NULL,
+    user_id uuid NOT NULL
+);
 
-GRANT INSERT, SELECT, UPDATE ON TABLE access.sessions TO tpss;
--- Index: fki_sessions_user_fkey
 
--- DROP INDEX IF EXISTS access.fki_sessions_user_fkey;
+ALTER TABLE access.members OWNER TO postgres;
 
-CREATE INDEX IF NOT EXISTS fki_sessions_user_fkey
-    ON access.sessions USING btree
-        (user_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: sessions_token_idx
+--
+-- Name: TABLE members; Type: COMMENT; Schema: access; Owner: postgres
+--
 
--- DROP INDEX IF EXISTS access.sessions_token_idx;
+COMMENT ON TABLE access.members IS 'Участники групп';
 
-CREATE UNIQUE INDEX IF NOT EXISTS sessions_token_idx
-    ON access.sessions USING btree
-        (token COLLATE pg_catalog."default" ASC NULLS LAST)
-    WITH (deduplicate_items=True)
-    TABLESPACE pg_default;
+
+--
+-- Name: phones; Type: TABLE; Schema: crm; Owner: postgres
+--
+
+CREATE TABLE crm.phones (
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    client_id uuid NOT NULL,
+    number text NOT NULL,
+    note text,
+    CONSTRAINT phones_number_check CHECK (crm.is_phone(number))
+);
+
+
+ALTER TABLE crm.phones OWNER TO postgres;
+
+--
+-- Data for Name: groups; Type: TABLE DATA; Schema: access; Owner: postgres
+--
+
+COPY access.groups (id, created, name) FROM stdin;
+a4608db9-4d64-4b38-833f-3fa1ea59c249	2025-07-20 19:31:12.173955+00	Администраторы
+\.
+
+
+--
+-- Data for Name: members; Type: TABLE DATA; Schema: access; Owner: postgres
+--
+
+COPY access.members (group_id, user_id) FROM stdin;
+a4608db9-4d64-4b38-833f-3fa1ea59c249	80d33387-faed-4218-b3eb-f87aa78c63d9
+\.
+
+
+--
+-- Data for Name: objects; Type: TABLE DATA; Schema: access; Owner: postgres
+--
+
+COPY access.objects (id, created, name, description) FROM stdin;
+a05eb8b7-5d6b-428e-ba5d-9271c128db03	2025-07-20 19:31:12.173955+00	settings	\N
+\.
+
+
+--
+-- Data for Name: rules; Type: TABLE DATA; Schema: access; Owner: postgres
+--
+
+COPY access.rules (object_id, group_id, access) FROM stdin;
+a05eb8b7-5d6b-428e-ba5d-9271c128db03	a4608db9-4d64-4b38-833f-3fa1ea59c249	{read,write}
+\.
+
+
+--
+-- Data for Name: sessions; Type: TABLE DATA; Schema: access; Owner: postgres
+--
+
+COPY access.sessions (id, created, archived, user_id, token) FROM stdin;
+\.
+
+
+--
+-- Data for Name: users; Type: TABLE DATA; Schema: access; Owner: postgres
+--
+
+COPY access.users (id, created, username, password, name) FROM stdin;
+80d33387-faed-4218-b3eb-f87aa78c63d9	2025-07-20 19:31:12.173955+00	test	$2a$06$0gNeVeHPY0RdT9gAuE0ceeLD0N9FZvv0phuT61grlKv9iQiqLojaC	Тестовый Тест Тестович
+\.
+
+
+--
+-- Data for Name: clients; Type: TABLE DATA; Schema: crm; Owner: postgres
+--
+
+COPY crm.clients (id, created, name) FROM stdin;
+07eafde9-dfe4-4564-b685-ecc70bcb1903	2025-07-20 19:31:12.173955+00	Test Клиент
+\.
+
+
+--
+-- Data for Name: phones; Type: TABLE DATA; Schema: crm; Owner: postgres
+--
+
+COPY crm.phones (created, client_id, number, note) FROM stdin;
+\.
+
+
+--
+-- Name: groups groups_name_uni; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.groups
+    ADD CONSTRAINT groups_name_uni UNIQUE (name);
+
+
+--
+-- Name: groups groups_pkey; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.groups
+    ADD CONSTRAINT groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: members members_group_member_uni; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.members
+    ADD CONSTRAINT members_group_member_uni UNIQUE (group_id, user_id);
+
+
+--
+-- Name: objects objects_pkey; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.objects
+    ADD CONSTRAINT objects_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_username_uni; Type: CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.users
+    ADD CONSTRAINT users_username_uni UNIQUE (username);
+
+
+--
+-- Name: clients clients_pkey; Type: CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.clients
+    ADD CONSTRAINT clients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fki_members_group_fkey; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE INDEX fki_members_group_fkey ON access.members USING btree (group_id);
+
+
+--
+-- Name: fki_members_user_fkey; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE INDEX fki_members_user_fkey ON access.members USING btree (user_id);
+
+
+--
+-- Name: fki_rules_group_fkey; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE INDEX fki_rules_group_fkey ON access.rules USING btree (group_id);
+
+
+--
+-- Name: fki_rules_object_fkey; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE INDEX fki_rules_object_fkey ON access.rules USING btree (object_id);
+
+
+--
+-- Name: fki_sessions_user_fkey; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE INDEX fki_sessions_user_fkey ON access.sessions USING btree (user_id);
+
+
+--
+-- Name: rules_uni_idx; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE UNIQUE INDEX rules_uni_idx ON access.rules USING btree (group_id, object_id) WITH (deduplicate_items='true');
+
+
+--
+-- Name: sessions_token_idx; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE UNIQUE INDEX sessions_token_idx ON access.sessions USING btree (token) WITH (deduplicate_items='true');
+
+
+--
+-- Name: fki_phones_client_fkey; Type: INDEX; Schema: crm; Owner: postgres
+--
+
+CREATE INDEX fki_phones_client_fkey ON crm.phones USING btree (client_id);
+
+
+--
+-- Name: members members_group_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.members
+    ADD CONSTRAINT members_group_fkey FOREIGN KEY (group_id) REFERENCES access.groups(id);
+
+
+--
+-- Name: members members_user_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.members
+    ADD CONSTRAINT members_user_fkey FOREIGN KEY (user_id) REFERENCES access.users(id);
+
+
+--
+-- Name: rules rules_group_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.rules
+    ADD CONSTRAINT rules_group_fkey FOREIGN KEY (group_id) REFERENCES access.groups(id);
+
+
+--
+-- Name: rules rules_object_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.rules
+    ADD CONSTRAINT rules_object_fkey FOREIGN KEY (object_id) REFERENCES access.objects(id);
+
+
+--
+-- Name: sessions sessions_user_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.sessions
+    ADD CONSTRAINT sessions_user_fkey FOREIGN KEY (user_id) REFERENCES access.users(id);
+
+
+--
+-- Name: phones phones_client_fkey; Type: FK CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.phones
+    ADD CONSTRAINT phones_client_fkey FOREIGN KEY (client_id) REFERENCES crm.clients(id);
+
+
+--
+-- Name: SCHEMA access; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT USAGE ON SCHEMA access TO tpss;
+
+
+--
+-- Name: SCHEMA crm; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT USAGE ON SCHEMA crm TO tpss;
+
+
+--
+-- Name: TABLE groups; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE access.groups TO tpss;
+
+
+--
+-- Name: TABLE objects; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE access.objects TO tpss;
+
+
+--
+-- Name: TABLE rules; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE access.rules TO tpss;
+
+
+--
+-- Name: TABLE sessions; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE access.sessions TO tpss;
+
+
+--
+-- Name: TABLE users; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE access.users TO tpss;
+
+
+--
+-- Name: TABLE clients; Type: ACL; Schema: crm; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE crm.clients TO tpss;
+
+
+--
+-- Name: TABLE members; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE access.members TO tpss;
+
+
+--
+-- Name: TABLE phones; Type: ACL; Schema: crm; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE crm.phones TO tpss;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: crm; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA crm GRANT SELECT,INSERT,UPDATE ON TABLES TO tpss;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
