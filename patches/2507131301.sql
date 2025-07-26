@@ -36,6 +36,24 @@ CREATE SCHEMA crm;
 ALTER SCHEMA crm OWNER TO postgres;
 
 --
+-- Name: customs; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA customs;
+
+
+ALTER SCHEMA customs OWNER TO postgres;
+
+--
+-- Name: erp; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA erp;
+
+
+ALTER SCHEMA erp OWNER TO postgres;
+
+--
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -74,6 +92,19 @@ CREATE TYPE access.access_type AS ENUM (
 
 
 ALTER TYPE access.access_type OWNER TO postgres;
+
+--
+-- Name: param_type; Type: TYPE; Schema: customs; Owner: postgres
+--
+
+CREATE TYPE customs.param_type AS ENUM (
+    'string',
+    'int',
+    'float'
+);
+
+
+ALTER TYPE customs.param_type OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -370,19 +401,125 @@ COMMENT ON TABLE access.members IS 'Участники групп';
 
 
 --
+-- Name: contracts; Type: TABLE; Schema: crm; Owner: postgres
+--
+
+CREATE TABLE crm.contracts (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE crm.contracts OWNER TO postgres;
+
+--
 -- Name: phones; Type: TABLE; Schema: crm; Owner: postgres
 --
 
 CREATE TABLE crm.phones (
     created timestamp with time zone DEFAULT now() NOT NULL,
     client_id uuid NOT NULL,
-    number text NOT NULL,
-    note text,
-    CONSTRAINT phones_number_check CHECK (crm.is_phone(number))
+    number numeric
 );
 
 
 ALTER TABLE crm.phones OWNER TO postgres;
+
+--
+-- Name: tasks; Type: TABLE; Schema: crm; Owner: postgres
+--
+
+CREATE TABLE crm.tasks (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    parent_id uuid,
+    author_id uuid NOT NULL,
+    description text NOT NULL
+);
+
+
+ALTER TABLE crm.tasks OWNER TO postgres;
+
+--
+-- Name: params; Type: TABLE; Schema: customs; Owner: postgres
+--
+
+CREATE TABLE customs.params (
+    id uuid NOT NULL,
+    created timestamp with time zone,
+    type customs.param_type NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE customs.params OWNER TO postgres;
+
+--
+-- Name: params_float; Type: TABLE; Schema: customs; Owner: postgres
+--
+
+CREATE TABLE customs.params_float (
+    param_id uuid,
+    object_id uuid NOT NULL,
+    value double precision
+);
+
+
+ALTER TABLE customs.params_float OWNER TO postgres;
+
+--
+-- Name: params_int; Type: TABLE; Schema: customs; Owner: postgres
+--
+
+CREATE TABLE customs.params_int (
+    param_id uuid,
+    object_id uuid NOT NULL,
+    value bigint
+);
+
+
+ALTER TABLE customs.params_int OWNER TO postgres;
+
+--
+-- Name: params_string; Type: TABLE; Schema: customs; Owner: postgres
+--
+
+CREATE TABLE customs.params_string (
+    param_id uuid,
+    object_id uuid NOT NULL,
+    value text
+);
+
+
+ALTER TABLE customs.params_string OWNER TO postgres;
+
+--
+-- Name: equipment; Type: TABLE; Schema: erp; Owner: postgres
+--
+
+CREATE TABLE erp.equipment (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE erp.equipment OWNER TO postgres;
+
+--
+-- Name: service_objects; Type: TABLE; Schema: erp; Owner: postgres
+--
+
+CREATE TABLE erp.service_objects (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE erp.service_objects OWNER TO postgres;
 
 --
 -- Data for Name: groups; Type: TABLE DATA; Schema: access; Owner: postgres
@@ -447,10 +584,74 @@ COPY crm.clients (id, created, name) FROM stdin;
 
 
 --
+-- Data for Name: contracts; Type: TABLE DATA; Schema: crm; Owner: postgres
+--
+
+COPY crm.contracts (id, created, name) FROM stdin;
+\.
+
+
+--
 -- Data for Name: phones; Type: TABLE DATA; Schema: crm; Owner: postgres
 --
 
-COPY crm.phones (created, client_id, number, note) FROM stdin;
+COPY crm.phones (created, client_id, number) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tasks; Type: TABLE DATA; Schema: crm; Owner: postgres
+--
+
+COPY crm.tasks (id, created, name, parent_id, author_id, description) FROM stdin;
+\.
+
+
+--
+-- Data for Name: params; Type: TABLE DATA; Schema: customs; Owner: postgres
+--
+
+COPY customs.params (id, created, type, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: params_float; Type: TABLE DATA; Schema: customs; Owner: postgres
+--
+
+COPY customs.params_float (param_id, object_id, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: params_int; Type: TABLE DATA; Schema: customs; Owner: postgres
+--
+
+COPY customs.params_int (param_id, object_id, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: params_string; Type: TABLE DATA; Schema: customs; Owner: postgres
+--
+
+COPY customs.params_string (param_id, object_id, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: equipment; Type: TABLE DATA; Schema: erp; Owner: postgres
+--
+
+COPY erp.equipment (id, created, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: service_objects; Type: TABLE DATA; Schema: erp; Owner: postgres
+--
+
+COPY erp.service_objects (id, created, name) FROM stdin;
 \.
 
 
@@ -519,6 +720,46 @@ ALTER TABLE ONLY crm.clients
 
 
 --
+-- Name: contracts contracts_pkey; Type: CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.contracts
+    ADD CONSTRAINT contracts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.tasks
+    ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: params params_pkey; Type: CONSTRAINT; Schema: customs; Owner: postgres
+--
+
+ALTER TABLE ONLY customs.params
+    ADD CONSTRAINT params_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: equipment equipment_pkey; Type: CONSTRAINT; Schema: erp; Owner: postgres
+--
+
+ALTER TABLE ONLY erp.equipment
+    ADD CONSTRAINT equipment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: service_objects service_objects_pkey; Type: CONSTRAINT; Schema: erp; Owner: postgres
+--
+
+ALTER TABLE ONLY erp.service_objects
+    ADD CONSTRAINT service_objects_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: fki_members_group_fkey; Type: INDEX; Schema: access; Owner: postgres
 --
 
@@ -575,6 +816,41 @@ CREATE INDEX fki_phones_client_fkey ON crm.phones USING btree (client_id);
 
 
 --
+-- Name: fki_tasks_author_fkey; Type: INDEX; Schema: crm; Owner: postgres
+--
+
+CREATE INDEX fki_tasks_author_fkey ON crm.tasks USING btree (author_id);
+
+
+--
+-- Name: fki_tasks_parent_fkey; Type: INDEX; Schema: crm; Owner: postgres
+--
+
+CREATE INDEX fki_tasks_parent_fkey ON crm.tasks USING btree (parent_id);
+
+
+--
+-- Name: fki_params_float_param_fkey; Type: INDEX; Schema: customs; Owner: postgres
+--
+
+CREATE INDEX fki_params_float_param_fkey ON customs.params_float USING btree (param_id);
+
+
+--
+-- Name: fki_params_int_param_fkey; Type: INDEX; Schema: customs; Owner: postgres
+--
+
+CREATE INDEX fki_params_int_param_fkey ON customs.params_int USING btree (param_id);
+
+
+--
+-- Name: fki_params_string_param_fkey; Type: INDEX; Schema: customs; Owner: postgres
+--
+
+CREATE INDEX fki_params_string_param_fkey ON customs.params_string USING btree (param_id);
+
+
+--
 -- Name: members members_group_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
 --
 
@@ -623,6 +899,46 @@ ALTER TABLE ONLY crm.phones
 
 
 --
+-- Name: tasks tasks_author_fkey; Type: FK CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.tasks
+    ADD CONSTRAINT tasks_author_fkey FOREIGN KEY (author_id) REFERENCES access.users(id);
+
+
+--
+-- Name: tasks tasks_parent_fkey; Type: FK CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.tasks
+    ADD CONSTRAINT tasks_parent_fkey FOREIGN KEY (parent_id) REFERENCES crm.tasks(id);
+
+
+--
+-- Name: params_float params_float_fkey; Type: FK CONSTRAINT; Schema: customs; Owner: postgres
+--
+
+ALTER TABLE ONLY customs.params_float
+    ADD CONSTRAINT params_float_fkey FOREIGN KEY (param_id) REFERENCES customs.params(id);
+
+
+--
+-- Name: params_int params_int_fkey; Type: FK CONSTRAINT; Schema: customs; Owner: postgres
+--
+
+ALTER TABLE ONLY customs.params_int
+    ADD CONSTRAINT params_int_fkey FOREIGN KEY (param_id) REFERENCES customs.params(id);
+
+
+--
+-- Name: params_string params_string_fkey; Type: FK CONSTRAINT; Schema: customs; Owner: postgres
+--
+
+ALTER TABLE ONLY customs.params_string
+    ADD CONSTRAINT params_string_fkey FOREIGN KEY (param_id) REFERENCES customs.params(id);
+
+
+--
 -- Name: SCHEMA access; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -634,6 +950,20 @@ GRANT USAGE ON SCHEMA access TO tpss;
 --
 
 GRANT USAGE ON SCHEMA crm TO tpss;
+
+
+--
+-- Name: SCHEMA customs; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT USAGE ON SCHEMA customs TO tpss;
+
+
+--
+-- Name: SCHEMA erp; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT ALL ON SCHEMA erp TO tpss;
 
 
 --
@@ -686,10 +1016,24 @@ GRANT SELECT,INSERT,UPDATE ON TABLE access.members TO tpss;
 
 
 --
+-- Name: TABLE contracts; Type: ACL; Schema: crm; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE crm.contracts TO tpss;
+
+
+--
 -- Name: TABLE phones; Type: ACL; Schema: crm; Owner: postgres
 --
 
 GRANT SELECT,INSERT,UPDATE ON TABLE crm.phones TO tpss;
+
+
+--
+-- Name: TABLE tasks; Type: ACL; Schema: crm; Owner: postgres
+--
+
+GRANT SELECT,INSERT,UPDATE ON TABLE crm.tasks TO tpss;
 
 
 --
