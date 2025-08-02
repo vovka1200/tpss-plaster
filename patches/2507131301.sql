@@ -799,6 +799,14 @@ ALTER TABLE ONLY crm.tasks
 
 
 --
+-- Name: params_objects params_objects_param_id_object_id_key; Type: CONSTRAINT; Schema: customs; Owner: postgres
+--
+
+ALTER TABLE ONLY customs.params_objects
+    ADD CONSTRAINT params_objects_param_id_object_id_key UNIQUE (param_id, object_id);
+
+
+--
 -- Name: params params_pkey; Type: CONSTRAINT; Schema: customs; Owner: postgres
 --
 
