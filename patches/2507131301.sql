@@ -579,7 +579,8 @@ a4608db9-4d64-4b38-833f-3fa1ea59c249	80d33387-faed-4218-b3eb-f87aa78c63d9
 --
 
 COPY access.objects (id, created, name, description) FROM stdin;
-a05eb8b7-5d6b-428e-ba5d-9271c128db03	2025-07-20 19:31:12.173955+00	settings	\N
+a05eb8b7-5d6b-428e-ba5d-9271c128db03	2025-07-20 19:31:12.173955+00	settings	Настройки
+e060a0ea-7837-45af-bd20-e97a3598267c	2025-07-30 19:14:05.823037+00	User	Пользователь
 \.
 
 
@@ -589,6 +590,7 @@ a05eb8b7-5d6b-428e-ba5d-9271c128db03	2025-07-20 19:31:12.173955+00	settings	\N
 
 COPY access.rules (object_id, group_id, access) FROM stdin;
 a05eb8b7-5d6b-428e-ba5d-9271c128db03	a4608db9-4d64-4b38-833f-3fa1ea59c249	{read,write}
+e060a0ea-7837-45af-bd20-e97a3598267c	a4608db9-4d64-4b38-833f-3fa1ea59c249	{read,write}
 \.
 
 
