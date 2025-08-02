@@ -217,6 +217,8 @@ BEGIN
 
     INSERT INTO access.rules (group_id, object_id, access)
     VALUES (a_group, a_object, a_access)
+	ON CONFLICT (group_id, object_id) DO UPDATE
+	SET access=EXCLUDED.access
     RETURNING * INTO v_rules;
 
     RETURN v_rules;
