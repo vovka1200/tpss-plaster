@@ -1087,6 +1087,13 @@ GRANT SELECT,INSERT,UPDATE ON TABLE access.members TO tpss;
 
 
 --
+-- Name: TABLE companies; Type: ACL; Schema: crm; Owner: postgres
+--
+
+GRANT ALL ON TABLE crm.companies TO tpss;
+
+
+--
 -- Name: TABLE contracts; Type: ACL; Schema: crm; Owner: postgres
 --
 
