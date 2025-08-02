@@ -1157,6 +1157,13 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA crm GRANT SELECT,INSERT,UPD
 
 
 --
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: customs; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA customs GRANT ALL ON TABLES TO tpss;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
