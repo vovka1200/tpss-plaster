@@ -621,6 +621,14 @@ COPY crm.clients (id, created, name) FROM stdin;
 
 
 --
+-- Data for Name: companies; Type: TABLE DATA; Schema: crm; Owner: postgres
+--
+
+COPY crm.companies (id, created, name) FROM stdin;
+\.
+
+
+--
 -- Data for Name: contracts; Type: TABLE DATA; Schema: crm; Owner: postgres
 --
 
