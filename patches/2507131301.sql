@@ -656,7 +656,9 @@ COPY crm.tasks (id, created, name, parent_id, author_id, description) FROM stdin
 -- Data for Name: params; Type: TABLE DATA; Schema: customs; Owner: postgres
 --
 
-COPY customs.params (id, created, type, name) FROM stdin;
+COPY customs.params (id, created, type, name, "default") FROM stdin;
+27c56111-356f-4c16-9cd8-0636a59f44b4	2025-07-27 19:01:58.832508+00	string	Юридический адрес	\N
+83c5d6fb-44b3-4645-acce-7eefb6342460	2025-07-27 19:31:26.069295+00	string	Физический адрес	\N
 \.
 
 
