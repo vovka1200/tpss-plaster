@@ -679,6 +679,14 @@ COPY customs.params_int (param_id, object_id, value) FROM stdin;
 
 
 --
+-- Data for Name: params_objects; Type: TABLE DATA; Schema: customs; Owner: postgres
+--
+
+COPY customs.params_objects (param_id, object_id) FROM stdin;
+\.
+
+
+--
 -- Data for Name: params_string; Type: TABLE DATA; Schema: customs; Owner: postgres
 --
 
