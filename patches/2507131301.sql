@@ -1115,6 +1115,41 @@ GRANT SELECT,INSERT,UPDATE ON TABLE crm.tasks TO tpss;
 
 
 --
+-- Name: TABLE params; Type: ACL; Schema: customs; Owner: postgres
+--
+
+GRANT ALL ON TABLE customs.params TO tpss;
+
+
+--
+-- Name: TABLE params_float; Type: ACL; Schema: customs; Owner: postgres
+--
+
+GRANT ALL ON TABLE customs.params_float TO tpss;
+
+
+--
+-- Name: TABLE params_int; Type: ACL; Schema: customs; Owner: postgres
+--
+
+GRANT ALL ON TABLE customs.params_int TO tpss;
+
+
+--
+-- Name: TABLE params_objects; Type: ACL; Schema: customs; Owner: postgres
+--
+
+GRANT ALL ON TABLE customs.params_objects TO tpss;
+
+
+--
+-- Name: TABLE params_string; Type: ACL; Schema: customs; Owner: postgres
+--
+
+GRANT ALL ON TABLE customs.params_string TO tpss;
+
+
+--
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: crm; Owner: postgres
 --
 
