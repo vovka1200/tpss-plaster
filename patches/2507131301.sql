@@ -403,6 +403,19 @@ COMMENT ON TABLE access.members IS 'Участники групп';
 
 
 --
+-- Name: companies; Type: TABLE; Schema: crm; Owner: postgres
+--
+
+CREATE TABLE crm.companies (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE crm.companies OWNER TO postgres;
+
+--
 -- Name: contracts; Type: TABLE; Schema: crm; Owner: postgres
 --
 
