@@ -462,14 +462,22 @@ ALTER TABLE crm.tasks OWNER TO postgres;
 --
 
 CREATE TABLE customs.params (
-    id uuid NOT NULL,
-    created timestamp with time zone,
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
     type customs.param_type NOT NULL,
-    name text NOT NULL
+    name text NOT NULL,
+    "default" text
 );
 
 
 ALTER TABLE customs.params OWNER TO postgres;
+
+--
+-- Name: COLUMN params."default"; Type: COMMENT; Schema: customs; Owner: postgres
+--
+
+COMMENT ON COLUMN customs.params."default" IS 'Значение по умолчанию';
+
 
 --
 -- Name: params_float; Type: TABLE; Schema: customs; Owner: postgres
@@ -496,6 +504,18 @@ CREATE TABLE customs.params_int (
 
 
 ALTER TABLE customs.params_int OWNER TO postgres;
+
+--
+-- Name: params_objects; Type: TABLE; Schema: customs; Owner: postgres
+--
+
+CREATE TABLE customs.params_objects (
+    param_id uuid NOT NULL,
+    object_id uuid NOT NULL
+);
+
+
+ALTER TABLE customs.params_objects OWNER TO postgres;
 
 --
 -- Name: params_string; Type: TABLE; Schema: customs; Owner: postgres
