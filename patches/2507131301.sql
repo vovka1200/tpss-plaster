@@ -775,6 +775,14 @@ ALTER TABLE ONLY crm.clients
 
 
 --
+-- Name: companies companies_pkey; Type: CONSTRAINT; Schema: crm; Owner: postgres
+--
+
+ALTER TABLE ONLY crm.companies
+    ADD CONSTRAINT companies_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: contracts contracts_pkey; Type: CONSTRAINT; Schema: crm; Owner: postgres
 --
 
