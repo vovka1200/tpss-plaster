@@ -679,8 +679,8 @@ COPY access.sessions (id, created, archived, user_id, token) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: access; Owner: postgres
 --
 
-COPY access.users (id, created, username, password, name) FROM stdin;
-80d33387-faed-4218-b3eb-f87aa78c63d9	2025-07-20 19:31:12.173955+00	test	$2a$06$0gNeVeHPY0RdT9gAuE0ceeLD0N9FZvv0phuT61grlKv9iQiqLojaC	Тестовый Тест Тестович
+COPY access.users (id, created, username, password, name, updated, avatar_id) FROM stdin;
+80d33387-faed-4218-b3eb-f87aa78c63d9	2025-07-20 19:31:12.173955+00	test	$2a$06$0gNeVeHPY0RdT9gAuE0ceeLD0N9FZvv0phuT61grlKv9iQiqLojaC	Тестовый Тест Тестович	2025-08-11 20:28:00+00	\N
 \.
 
 
