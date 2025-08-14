@@ -289,7 +289,9 @@ CREATE TABLE access.users (
     created timestamp with time zone DEFAULT now() NOT NULL,
     username text,
     password text,
-    name text
+    name text,
+    updated timestamp with time zone,
+    avatar_id uuid
 );
 
 
