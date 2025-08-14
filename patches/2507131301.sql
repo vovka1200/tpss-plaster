@@ -414,6 +414,21 @@ COMMENT ON TABLE access.members IS 'Участники групп';
 
 
 --
+-- Name: matrix; Type: VIEW; Schema: access; Owner: postgres
+--
+
+CREATE VIEW access.matrix AS
+ SELECT m.user_id,
+    o.name AS object,
+    r.access
+   FROM ((access.rules r
+     JOIN access.objects o ON ((o.id = r.object_id)))
+     JOIN access.members m ON ((m.group_id = r.group_id)));
+
+
+ALTER VIEW access.matrix OWNER TO postgres;
+
+--
 -- Name: companies; Type: TABLE; Schema: crm; Owner: postgres
 --
 
