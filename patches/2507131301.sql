@@ -971,6 +971,13 @@ CREATE INDEX fki_sessions_user_fkey ON access.sessions USING btree (user_id);
 
 
 --
+-- Name: fki_users_avatar_fkey; Type: INDEX; Schema: access; Owner: postgres
+--
+
+CREATE INDEX fki_users_avatar_fkey ON access.users USING btree (avatar_id);
+
+
+--
 -- Name: rules_uni_idx; Type: INDEX; Schema: access; Owner: postgres
 --
 
@@ -1064,6 +1071,14 @@ ALTER TABLE ONLY access.rules
 
 ALTER TABLE ONLY access.sessions
     ADD CONSTRAINT sessions_user_fkey FOREIGN KEY (user_id) REFERENCES access.users(id);
+
+
+--
+-- Name: users users_avatar_fkey; Type: FK CONSTRAINT; Schema: access; Owner: postgres
+--
+
+ALTER TABLE ONLY access.users
+    ADD CONSTRAINT users_avatar_fkey FOREIGN KEY (avatar_id) REFERENCES files.avatars(id);
 
 
 --
