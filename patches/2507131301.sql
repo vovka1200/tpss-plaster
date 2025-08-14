@@ -920,6 +920,22 @@ ALTER TABLE ONLY erp.service_objects
 
 
 --
+-- Name: avatars avatars_pkey; Type: CONSTRAINT; Schema: files; Owner: postgres
+--
+
+ALTER TABLE ONLY files.avatars
+    ADD CONSTRAINT avatars_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: files files_pkey; Type: CONSTRAINT; Schema: files; Owner: postgres
+--
+
+ALTER TABLE ONLY files.files
+    ADD CONSTRAINT files_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: fki_members_group_fkey; Type: INDEX; Schema: access; Owner: postgres
 --
 
