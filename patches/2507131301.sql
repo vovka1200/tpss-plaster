@@ -784,6 +784,22 @@ COPY erp.service_objects (id, created, name) FROM stdin;
 
 
 --
+-- Data for Name: avatars; Type: TABLE DATA; Schema: files; Owner: postgres
+--
+
+COPY files.avatars (id, created, name, body, mime) FROM stdin;
+\.
+
+
+--
+-- Data for Name: files; Type: TABLE DATA; Schema: files; Owner: postgres
+--
+
+COPY files.files (id, created, name, body, mime) FROM stdin;
+\.
+
+
+--
 -- Name: groups groups_name_uni; Type: CONSTRAINT; Schema: access; Owner: postgres
 --
 
