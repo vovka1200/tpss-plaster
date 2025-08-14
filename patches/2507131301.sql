@@ -583,6 +583,53 @@ CREATE TABLE erp.service_objects (
 ALTER TABLE erp.service_objects OWNER TO postgres;
 
 --
+-- Name: files; Type: TABLE; Schema: files; Owner: postgres
+--
+
+CREATE TABLE files.files (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    body bytea,
+    mime text DEFAULT 'application/octet-stream'::text NOT NULL
+);
+
+
+ALTER TABLE files.files OWNER TO postgres;
+
+--
+-- Name: avatars; Type: TABLE; Schema: files; Owner: postgres
+--
+
+CREATE TABLE files.avatars (
+)
+INHERITS (files.files);
+
+
+ALTER TABLE files.avatars OWNER TO postgres;
+
+--
+-- Name: avatars id; Type: DEFAULT; Schema: files; Owner: postgres
+--
+
+ALTER TABLE ONLY files.avatars ALTER COLUMN id SET DEFAULT public.uuid_generate_v4();
+
+
+--
+-- Name: avatars created; Type: DEFAULT; Schema: files; Owner: postgres
+--
+
+ALTER TABLE ONLY files.avatars ALTER COLUMN created SET DEFAULT now();
+
+
+--
+-- Name: avatars mime; Type: DEFAULT; Schema: files; Owner: postgres
+--
+
+ALTER TABLE ONLY files.avatars ALTER COLUMN mime SET DEFAULT 'application/octet-stream'::text;
+
+
+--
 -- Data for Name: groups; Type: TABLE DATA; Schema: access; Owner: postgres
 --
 
