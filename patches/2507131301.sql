@@ -1158,6 +1158,13 @@ GRANT ALL ON SCHEMA erp TO tpss;
 
 
 --
+-- Name: SCHEMA files; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT USAGE ON SCHEMA files TO tpss;
+
+
+--
 -- Name: TABLE groups; Type: ACL; Schema: access; Owner: postgres
 --
 
@@ -1204,6 +1211,13 @@ GRANT SELECT,INSERT,UPDATE ON TABLE crm.clients TO tpss;
 --
 
 GRANT SELECT,INSERT,UPDATE ON TABLE access.members TO tpss;
+
+
+--
+-- Name: TABLE matrix; Type: ACL; Schema: access; Owner: postgres
+--
+
+GRANT SELECT ON TABLE access.matrix TO tpss;
 
 
 --
@@ -1270,6 +1284,20 @@ GRANT ALL ON TABLE customs.params_string TO tpss;
 
 
 --
+-- Name: TABLE files; Type: ACL; Schema: files; Owner: postgres
+--
+
+GRANT ALL ON TABLE files.files TO tpss;
+
+
+--
+-- Name: TABLE avatars; Type: ACL; Schema: files; Owner: postgres
+--
+
+GRANT ALL ON TABLE files.avatars TO tpss;
+
+
+--
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: crm; Owner: postgres
 --
 
@@ -1281,6 +1309,13 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA crm GRANT SELECT,INSERT,UPD
 --
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA customs GRANT ALL ON TABLES TO tpss;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: files; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA files GRANT ALL ON TABLES TO tpss;
 
 
 --
