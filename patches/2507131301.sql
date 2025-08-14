@@ -54,6 +54,15 @@ CREATE SCHEMA erp;
 ALTER SCHEMA erp OWNER TO postgres;
 
 --
+-- Name: files; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA files;
+
+
+ALTER SCHEMA files OWNER TO postgres;
+
+--
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
 --
 
